@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=74.0", "wheel", "build"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autoproj_py"
+version = "0.1.0"
+description = "A Python implementation of the autoproj project"
+requires-python = ">=3.7"
+authors = [{name = "Caio Amaral", email = "caioaamaral@gmail.com"}]
+maintainers = [{name = "Caio Amaral", email = "caioaamaral@gmail.com"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*", "docs*"]
