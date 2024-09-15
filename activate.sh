@@ -14,6 +14,9 @@ export PATH=$PATH:~/caio_ws/autoproj-py/dist/bin
 export PYTHONUSERBASE_OLD=$PYTHONUSERBASE
 export PYTHONUSERBASE=~/caio_ws/autoproj-py/dist
 
+export PYTHONPATH_OLD=$PYTHONPATH
+export PYTHONPATH="${HOME}/caio_ws/autoproj-py/"
+
 export PS1_OLD=$PS1
 export PS1="\[\e[32m\][autoproj-py]\[\e[0m\] $PS1"
 
