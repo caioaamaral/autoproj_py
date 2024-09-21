@@ -1,4 +1,6 @@
+import importlib
 from pathlib import Path
+import sys
 
 from autoproj_py.autobuild.package import Package
 
@@ -11,9 +13,14 @@ class PackageRegistry():
         Package.setup(root_dir)
 
         for path in lookup_paths:
+            sys.path.insert(0, path.parent.as_posix())
             for autobuild_path in path.rglob("*.autobuild.py"):
+                init_file_path = path / "init.py"
+                if init_file_path.exists():
+                    init_module = importlib.import_module(f'{path.name}.init')
                 with open(autobuild_path, "r") as file:
                     exec(file.read(), {})
+            sys.path.pop()
         
         return cls
             
