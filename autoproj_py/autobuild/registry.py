@@ -1,13 +1,15 @@
 from pathlib import Path
 
-from autoproj_py.package.definition import PackageDefinition
+from autoproj_py.autobuild.package import Package
 
 
 class PackageRegistry():
-    _registry = dict[str, PackageDefinition]()
+    _registry = dict[str, Package]()
     
     @classmethod
-    def __init__(cls, lookup_paths: list[Path]):        
+    def __init__(cls, lookup_paths: list[Path], root_dir = None):
+        Package.setup(root_dir)
+
         for path in lookup_paths:
             for autobuild_path in path.rglob("*.autobuild.py"):
                 with open(autobuild_path, "r") as file:
@@ -16,7 +18,7 @@ class PackageRegistry():
         return cls
             
     @classmethod
-    def send(cls, package_name: str, package: PackageDefinition):
+    def send(cls, package_name: str, package: Package):
         cls._registry[package_name] = package
     
     @classmethod
