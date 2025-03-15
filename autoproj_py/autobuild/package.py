@@ -47,6 +47,9 @@ class Package:
             return
 
         importer.import_package(self.source, self.import_dir)
+
+    def build(self):
+        self.warn(f'no build rules set for {self.name}', "build")
     
     def run(self, cmd: list[str], cwd: str, env: dict = os.environ):
         Subprocess.run(cmd, cwd=cwd, env=env)
