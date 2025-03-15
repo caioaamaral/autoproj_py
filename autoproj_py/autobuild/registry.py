@@ -6,10 +6,11 @@ from autoproj_py.autobuild.package import Package
 
 
 class PackageRegistry():
-    _registry = dict[str, Package]()
+    _autobuild_registry = dict[str, Package]()
+    _autobuild_collector = []
     
     @classmethod
-    def __init__(cls, lookup_paths: list[Path], root_dir = None):
+    def init(cls, lookup_paths: list[Path], root_dir = None):
         Package.setup(root_dir)
 
         init_files = []
@@ -30,23 +31,37 @@ class PackageRegistry():
             for autobuild in autobuilds:
                 with open(autobuild, "r") as file:
                     exec(file.read(), {})
+                cls.send(autobuild)
 
             sys.path.pop()
 
         return cls
-            
-    @classmethod
-    def send(cls, package_name: str, package: Package):
-        cls._registry[package_name] = package
     
     @classmethod
+    def autobuild(cls):
+        for autobuild in cls._autobuild_collector:
+            print(f'- {autobuild}')
+
+    @classmethod
+    def collect(cls, package_name: str, package: Package):
+        cls._autobuild_collector.append((package_name, package))
+
+    @classmethod
+    def send(cls, autobuild):
+        for package_name, package in cls._autobuild_collector:
+            package.declared_at = autobuild
+            cls._autobuild_registry[package_name] = package
+
+        cls._autobuild_collector = []
+
+    @classmethod
     def get(cls, package_name: str):
-        return cls._registry[package_name]
+        return cls._autobuild_registry[package_name]
     
     @classmethod
     def keys(cls):
-        return cls._registry.keys()
+        return cls._autobuild_registry.keys()
 
     @classmethod
     def list(cls):
-        return list(cls._registry.keys())
+        return list(cls._autobuild_registry.items())

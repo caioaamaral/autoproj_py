@@ -20,4 +20,4 @@ class Autoproj:
     install_dir = root_dir / "install"
 
     config = Config(autoproj_dir / "config.yaml")
-    registry = PackageRegistry.__init__(lookup_paths=[autoproj_dir], root_dir=root_dir)
+    registry = PackageRegistry.init(lookup_paths=[autoproj_dir], root_dir=root_dir)

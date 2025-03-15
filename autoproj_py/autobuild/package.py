@@ -36,6 +36,17 @@ class Package:
         self.import_dir = self.root_dir / self.name
         self.source_dir = self.import_dir
         self.dependencies = []
+        self.declared_at = None
+
+    def details(self):
+        bold = "\033[1m"
+        reset = "\033[0m"
+        return (
+            f"{bold}VS Package:{reset} {self.name}\n"
+            f"  {bold}source definition:{reset} {self.source}\n"
+            f"  {bold}first match:{reset} {self.declared_at}\n"
+            f"  {bold}depends on:{reset} {self.dependencies}\n"
+        )
 
     def is_aquired(self):
         return self.import_dir.exists()

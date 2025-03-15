@@ -2,6 +2,7 @@ import argparse
 from . import bootstrap
 from . import build
 from . import _list
+from . import show
 
 def main():
     parser = argparse.ArgumentParser(prog="autoproj", description="Autoproj command line tool")
@@ -10,6 +11,8 @@ def main():
     bootstrap.configure(subparser)
     build.configure(subparser)
     _list.configure(subparser)
+    show.configure(subparser)
+
 
     args = parser.parse_args()
 
