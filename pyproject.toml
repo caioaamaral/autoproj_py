@@ -14,7 +14,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["gitpython", "lsb_release"]
+dependencies = ["gitpython"]
 
 [project.scripts]
 autoproj = "autoproj_py.cli:main"

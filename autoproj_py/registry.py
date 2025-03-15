@@ -4,11 +4,11 @@ import sys
 
 from autoproj_py.autobuild.package import Package
 from autoproj_py.autobuild.registry import AutobuildRegistry
-from autoproj_py.osdep import APT_OSDep, OSDepRegistry
+from autoproj_py.osdep import OSDepRegistry
 
 
 class Registry():
-    
+
     @classmethod
     def init(cls, lookup_paths: list[Path], root_dir = None):
         Package.setup(root_dir)
@@ -27,11 +27,11 @@ class Registry():
                 importlib.import_module(f'{path.name}.init')
 
             sys.path.pop()
-        
+
         for osdeps in osdep_files:
             for osdep in osdeps:
                 OSDepRegistry.send(osdep)
-        
+
         for autobuilds, sys_path in autobuild_files:
             sys.path.insert(0, sys_path)
             for autobuild in autobuilds:
