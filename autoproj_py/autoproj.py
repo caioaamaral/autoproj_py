@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 
 from autoproj_py.config import Config
-from autoproj_py.autobuild.registry import PackageRegistry
+from autoproj_py.autobuild.registry import AutobuildRegistry
+from autoproj_py.registry import Registry
 
 class Autoproj:
     @staticmethod
@@ -20,4 +21,4 @@ class Autoproj:
     install_dir = root_dir / "install"
 
     config = Config(autoproj_dir / "config.yaml")
-    registry = PackageRegistry.init(lookup_paths=[autoproj_dir], root_dir=root_dir)
+    registry = Registry.init(lookup_paths=[autoproj_dir], root_dir=root_dir)
