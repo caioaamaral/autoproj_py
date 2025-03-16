@@ -4,7 +4,6 @@ from pathlib import Path
 from autoproj_py.config import Config
 from autoproj_py.environment import Environment
 from autoproj_py.manifest import Manifest
-from autoproj_py.registry import Registry
 
 class Autoproj:
     @staticmethod
@@ -23,5 +22,4 @@ class Autoproj:
 
     config = Config(autoproj_dir / 'config.yaml')
     env = Environment(root_dir / 'env.sh')
-    manifest = Manifest.init(autoproj_dir)
-    registry = Registry.init(lookup_paths=manifest.lookup_paths, root_dir=root_dir)
+    manifest = Manifest.init(root_dir)

@@ -33,7 +33,7 @@ class VCSDefinition:
     options: dict
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data: dict):
         for handler in cls.HANDLERS:
             if handler.TOKEN in data:
                 return handler.parse(data)
@@ -41,7 +41,7 @@ class VCSDefinition:
         return cls(
             data['type'],
             data['url'],
-            data['options'] or {}
+            data.get('options', {})
         )
 
     @classmethod

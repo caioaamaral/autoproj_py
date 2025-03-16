@@ -8,7 +8,7 @@ def configure(subparser):
 
 
 def run(args):
-    if (pkg := Autoproj.registry.get(args.PACKAGE_NAME)):
+    if (pkg := Autoproj.manifest.get(args.PACKAGE_NAME)):
         print(pkg.details())
     else:
         print(f'package {args.PACKAGE_NAME} not found')
