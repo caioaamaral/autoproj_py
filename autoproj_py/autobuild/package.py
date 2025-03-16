@@ -4,6 +4,7 @@ import os
 import autoproj_py.autobuild.logger as logger
 import autoproj_py.ops.acquire as importer
 from autoproj_py.autobuild.subprocess import Subprocess
+from autoproj_py.vcs_definition import VCSDefinition
 
 
 def __setup(name: str, level: "logging._Level"):
@@ -23,6 +24,7 @@ _SETUPS = {
     "import": __setup_import
 }
 
+
 class Package:
     root_dir = None
 
@@ -30,9 +32,9 @@ class Package:
     def setup(root_dir: str):
         Package.root_dir = root_dir
 
-    def __init__(self, name: str, source: str):
+    def __init__(self, name: str, url: str):
         self.name = name
-        self.source = source
+        self.source = VCSDefinition.from_url(url)
         self.import_dir = self.root_dir / self.name
         self.source_dir = self.import_dir
         self.dependencies = []
@@ -50,7 +52,7 @@ class Package:
 
     def is_aquired(self):
         return self.import_dir.exists()
-    
+
     def acquire(self):
         self.info(f"importing {self.name}", "import")
         if self.is_aquired():
@@ -61,7 +63,7 @@ class Package:
 
     def build(self):
         self.warn(f'no build rules set for {self.name}', "build")
-    
+
     def run(self, cmd: list[str], cwd: str, env: dict = os.environ):
         Subprocess.run(cmd, cwd=cwd, env=env)
 
@@ -73,6 +75,6 @@ class Package:
 
     def warn(self, message: str, step:str):
         self.log(message, logging.WARNING, step)
-    
+
     def error(self, message: str, step:str):
         self.log(message, logging.ERROR, step)
