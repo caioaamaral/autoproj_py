@@ -17,22 +17,21 @@ class Registry():
         osdep_files = []
         autobuild_files = []
         for path in lookup_paths:
-            init_files.append((path / "init.py", path.parent.as_posix()))
-            osdep_files.append(path.rglob("*.osdep"))
-            autobuild_files.append((path.rglob("*.autobuild"), path.parent.as_posix()))
+            init_files = (path / "init.py", path.parent.as_posix())
+            osdep_files = path.rglob("*.osdep")
+            autobuild_files = (path.rglob("*.autobuild"), path.parent.as_posix())
 
-        for init, sys_path in init_files:
+            init, sys_path = init_files
             sys.path.insert(0, sys_path)
             if init.exists():
                 importlib.import_module(f'{path.name}.init')
 
             sys.path.pop()
 
-        for osdeps in osdep_files:
-            for osdep in osdeps:
+            for osdep in osdep_files:
                 OSDepRegistry.send(osdep)
 
-        for autobuilds, sys_path in autobuild_files:
+            autobuilds, sys_path = autobuild_files
             sys.path.insert(0, sys_path)
             for autobuild in autobuilds:
                 with open(autobuild, "r") as file:
