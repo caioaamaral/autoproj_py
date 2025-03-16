@@ -12,9 +12,11 @@ class VCSHandler:
 
 class GithubHandler(VCSHandler):
 
+    TOKEN = 'github'
+
     @classmethod
     def parse(cls, data: dict):
-        _value = data[cls.token]
+        _value = data[cls.TOKEN]
         _type = 'git'
         _url =  f'git@github.com:{_value}.git'
         _options = {}
@@ -24,7 +26,7 @@ class GithubHandler(VCSHandler):
 @dataclass
 class VCSDefinition:
 
-    HANDLERS: ClassVar[list[VCSHandler]] = []
+    HANDLERS: ClassVar[list[VCSHandler]] = [GithubHandler]
 
     type: str
     url: str
@@ -39,7 +41,7 @@ class VCSDefinition:
         return cls(
             data['type'],
             data['url'],
-            data['options']
+            data['options'] or {}
         )
 
     @classmethod
