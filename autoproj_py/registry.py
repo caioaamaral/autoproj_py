@@ -1,6 +1,6 @@
 import importlib
-from pathlib import Path
 import sys
+
 
 from autoproj_py.autobuild.package import Package
 from autoproj_py.autobuild.registry import AutobuildRegistry
@@ -20,7 +20,10 @@ class Registry():
         osdep_files = []
         autobuild_files = []
         for package_set in cls.package_sets:
-            path = package_set.import_path
+            if package_set.is_main:
+                path = package_set.import_path
+            else:
+                path = package_set.hidden_path
             init_files = (path / 'init.py', path.parent.as_posix())
             osdep_files = path.rglob('*.osdep')
             autobuild_files = ([
@@ -49,7 +52,7 @@ class Registry():
             for autobuild in autobuilds:
                 with open(autobuild, 'r') as file:
                     exec(file.read(), exec_context, exec_context)
-                package_set.vcs_packages.send(autobuild)
+                package_set.vcs_packages.send(package_set.import_path / autobuild.name)
 
             sys.path.pop()
 

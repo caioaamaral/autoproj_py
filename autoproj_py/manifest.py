@@ -15,21 +15,21 @@ class Manifest:
         cls.base_dir = root_dir / 'autoproj'
         PackageSet.base_dir = cls.base_dir
 
-        cls.package_sets = cls.load_package_sets()
+        cls.package_sets = cls._load_package_sets_config()
 
         cls.registry = Registry.init(package_sets=cls.package_sets, root_dir=root_dir)
 
         return cls
 
     @classmethod
-    def load_package_sets(cls):
+    def _load_package_sets_config(cls):
         with open(cls.base_dir / 'manifest') as f:
             manifest = yaml.safe_load(f)
 
         package_sets: list[PackageSet] = [MainPackageSet()]
 
         if not manifest.get('package_sets'):
-            return []
+            return package_sets
 
         for vcs in manifest['package_sets']:
             pkg_set = PackageSet(VCSDefinition.from_dict(vcs))
@@ -37,7 +37,8 @@ class Manifest:
             if pkg_set.is_remote and not pkg_set.is_imported:
                 pkg_set.aquire()
 
-            pkg_set.configure()
+            if not pkg_set.is_main:
+                pkg_set._hide_itself()
 
             package_sets.append(pkg_set)
 

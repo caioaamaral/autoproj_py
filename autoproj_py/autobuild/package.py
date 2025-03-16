@@ -56,7 +56,7 @@ class Package:
             f"  {bold}depends on:{reset}\n"
             f"      {self.dependencies}\n"
             f"  {bold}others matches:{reset}\n"
-            + "".join([f"      {match}\n" for match in self.matches])
+            + "".join([f"      - {match}\n" for match in self.matches])
         )
 
     def is_aquired(self):
