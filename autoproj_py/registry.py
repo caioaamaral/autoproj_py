@@ -4,6 +4,7 @@ import sys
 
 from autoproj_py.autobuild.package import Package
 from autoproj_py.autobuild.registry import AutobuildRegistry
+import autoproj_py.autobuild.dsl as dsl
 from autoproj_py.osdep import OSDepRegistry
 
 
@@ -17,9 +18,9 @@ class Registry():
         osdep_files = []
         autobuild_files = []
         for path in lookup_paths:
-            init_files = (path / "init.py", path.parent.as_posix())
-            osdep_files = path.rglob("*.osdep")
-            autobuild_files = (path.rglob("*.autobuild"), path.parent.as_posix())
+            init_files = (path / 'init.py', path.parent.as_posix())
+            osdep_files = path.rglob('*.osdep')
+            autobuild_files = (path.rglob('*.autobuild'), path.parent.as_posix())
 
             init, sys_path = init_files
             sys.path.insert(0, sys_path)
@@ -32,10 +33,13 @@ class Registry():
                 OSDepRegistry.send(osdep)
 
             autobuilds, sys_path = autobuild_files
+
+            # make visible dsl functions
+            exec_context = dict(vars(dsl))
             sys.path.insert(0, sys_path)
             for autobuild in autobuilds:
-                with open(autobuild, "r") as file:
-                    exec(file.read(), {})
+                with open(autobuild, 'r') as file:
+                    exec(file.read(), exec_context, exec_context)
                 AutobuildRegistry.send(autobuild)
 
             sys.path.pop()
