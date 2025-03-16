@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import lsb_release
 import yaml
 
@@ -6,30 +8,29 @@ DISTRO = lsb_release.get_distro_information()['CODENAME']
 
 
 class OSDepRegistry:
-    _packages = dict[str, "APT_OSDep"]()
 
-    @classmethod
-    def send(cls, osdep: 'Path'):
+    def __init__(self, name: str):
+        self.name = name
+        self._packages = dict[str, 'APT_OSDep']()
+
+    def send(self, osdep: Path):
         with open(osdep, 'r') as file:
             data: dict = yaml.safe_load(file)
             for name, definition in data.items():
-                cls._packages[name] = APT_OSDep(name, definition, declared_at=osdep)
+                pkg = APT_OSDep(name, definition, declared_at=f'{self.name}: {osdep}')
+                self._packages[name] = pkg
 
-    @classmethod
-    def has(cls, package_name: str):
-        return package_name in cls._packages
+    def has(self, package_name: str):
+        return package_name in self._packages
 
-    @classmethod
-    def get(cls, package_name: str):
-        return cls._packages[package_name]
+    def get(self, package_name: str):
+        return self._packages[package_name]
 
-    @classmethod
-    def keys(cls):
-        return cls._packages.keys()
+    def keys(self):
+        return self._packages.keys()
 
-    @classmethod
-    def list(cls):
-        return list(cls._packages.items())
+    def list(self):
+        return list(self._packages.items())
 
 
 class APT_OSDep:
@@ -68,10 +69,12 @@ class APT_OSDep:
         reset = "\033[0m"
         return (
             f"{bold}APT OSDep '{self.name}'{reset} \n"
-            f"  {bold}apt-dpkg:{reset} {self.apt_dpkg}\n"
-            f'  {bold}first match:{reset} {self.declared_at}\n'
-            f"      {bold}selector:{reset} '{self.rule}'\n"
-            f"  {bold}osdep:{reset} {self.definition['osdep']}\n" if 'osdep' in self.definition else ''
+            f'  {bold}first match:{reset}\n'
+            f'      {self.declared_at}\n'
+            f"  {bold}apt-dpkg:{reset}\n"
+            f"      {self.apt_dpkg} [selector: '{self.rule}]'\n"
+            f"  {bold}osdep:{reset}\n"
+            f"      {self.definition['osdep']}\n" if 'osdep' in self.definition else ''
         )
 
     def install(self):

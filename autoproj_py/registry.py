@@ -4,23 +4,32 @@ import sys
 
 from autoproj_py.autobuild.package import Package
 from autoproj_py.autobuild.registry import AutobuildRegistry
+from autoproj_py.osdep import OSDepRegistry, APT_OSDep
+from autoproj_py.package_set import PackageSet
 import autoproj_py.autobuild.dsl as dsl
-from autoproj_py.osdep import OSDepRegistry
 
 
 class Registry():
 
     @classmethod
-    def init(cls, lookup_paths: list[Path], root_dir = None):
+    def init(cls, package_sets: list[PackageSet], root_dir = None):
         Package.setup(root_dir)
+        cls.package_sets = package_sets
 
         init_files = []
         osdep_files = []
         autobuild_files = []
-        for path in lookup_paths:
+        for package_set in cls.package_sets:
+            path = package_set.import_path
             init_files = (path / 'init.py', path.parent.as_posix())
             osdep_files = path.rglob('*.osdep')
-            autobuild_files = (path.rglob('*.autobuild'), path.parent.as_posix())
+            autobuild_files = ([
+                p
+                for p in path.rglob("*.autobuild")
+
+                # skip the file only if this is the "main" package_set AND path has "package_sets"
+                if not (package_set.is_main and "package_sets" in p.parts)
+            ], path.parent.as_posix())
 
             init, sys_path = init_files
             sys.path.insert(0, sys_path)
@@ -30,7 +39,7 @@ class Registry():
             sys.path.pop()
 
             for osdep in osdep_files:
-                OSDepRegistry.send(osdep)
+                package_set.osdeps.send(osdep)
 
             autobuilds, sys_path = autobuild_files
 
@@ -40,7 +49,7 @@ class Registry():
             for autobuild in autobuilds:
                 with open(autobuild, 'r') as file:
                     exec(file.read(), exec_context, exec_context)
-                AutobuildRegistry.send(autobuild)
+                package_set.vcs_packages.send(autobuild)
 
             sys.path.pop()
 
@@ -48,23 +57,51 @@ class Registry():
 
     @classmethod
     def get(cls, package_name: str):
-        if OSDepRegistry.has(package_name):
-            return OSDepRegistry.get(package_name)
+        return cls._find_first(package_name)
 
-        if AutobuildRegistry.has(package_name):
-            return AutobuildRegistry.get(package_name)
+    @classmethod
+    def _find_first(cls, package_name: str) -> APT_OSDep|Package:
+        return next(cls._find(package_name), None)
+
+    @classmethod
+    def _find_all(cls, package_name: str) -> list[APT_OSDep|Package]:
+        return list(cls._find(package_name))
+
+    @classmethod
+    def _find(cls, package_name: str):
+        # attempt to find an osdep first
+        for package_set in cls.package_sets:
+            if package_set.osdeps.has(package_name):
+                osdep = package_set.osdeps.get(package_name)
+                yield osdep
+
+        # fallback to a vcs package
+        for package_set in cls.package_sets:
+            if package_set.vcs_packages.has(package_name):
+                pkg = package_set.vcs_packages.get(package_name)
+                yield pkg
 
     @classmethod
     def show(cls, package_name: str):
-        package = cls.get(package_name)
+        matches = cls._find_all(package_name)
+        if not matches:
+            print(f'No package found for {package_name}')
+            return
+
+        package = matches.pop(0)
+
         if package:
+            declarations = [
+                f'{str(pkg.declared_at)}'
+                for pkg in matches
+            ]
+            package.matches = declarations
             print(package.details())
 
     @classmethod
     def keys(cls):
         return dict(
-            osdep=OSDepRegistry.keys(),
-            autobuild=AutobuildRegistry.keys()
+            {package_set.name: {'osdeps': list(package_set.osdeps.keys()), 'vcs': list(package_set.vcs_packages.keys())} for package_set in cls.package_sets}
         )
 
     @classmethod

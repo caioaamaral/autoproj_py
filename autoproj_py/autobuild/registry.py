@@ -5,34 +5,46 @@ import sys
 from autoproj_py.autobuild.package import Package
 
 
-class AutobuildRegistry():
-    _autobuild_registry = dict[str, Package]()
-    _autobuild_collector = []
+class AutobuildCollector:
+    _packages = []
 
     @classmethod
     def collect(cls, package_name: str, package: Package):
-        cls._autobuild_collector.append((package_name, package))
+        cls._packages.append((package_name, package))
 
     @classmethod
-    def send(cls, autobuild):
-        for package_name, package in cls._autobuild_collector:
-            package.declared_at = autobuild
-            cls._autobuild_registry[package_name] = package
+    def flush(cls):
+        packages = cls._packages
+        cls._packages = []
+        return packages
 
-        cls._autobuild_collector = []
 
-    @classmethod
-    def has(cls, package_name: str):
-        return package_name in cls._autobuild_registry
+class AutobuildRegistry:
 
-    @classmethod
-    def get(cls, package_name: str):
-        return cls._autobuild_registry[package_name]
-    
-    @classmethod
-    def keys(cls):
-        return cls._autobuild_registry.keys()
+    def __init__(self, name: str):
+        self.name = name
+        self._autobuild_registry = dict[str, Package]()
 
-    @classmethod
-    def list(cls):
-        return list(cls._autobuild_registry.items())
+    def send(self, autobuild_file):
+        for package_name, package in AutobuildCollector.flush():
+            package.declared_at = f'{self.name}: {autobuild_file}'
+            self._autobuild_registry[package_name] = package
+
+    def has(self, package_name: str):
+        return package_name in self._autobuild_registry
+
+    def get(self, package_name: str):
+        return self._autobuild_registry[package_name]
+
+    def keys(self):
+        return self._autobuild_registry.keys()
+
+    def list(self):
+        return list(self._autobuild_registry.items())
+
+    def __repr__(self):
+        items = [
+            ': '.join([name, str(pkg.declared_at)])
+            for name, pkg in self._autobuild_registry.items()
+        ]
+        return f"{self.name}: {[': '.join([name, str(pkg.declared_at)]) for name, pkg in self._autobuild_registry.items()]}"

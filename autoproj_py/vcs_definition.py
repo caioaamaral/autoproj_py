@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar
 
 
@@ -30,7 +30,7 @@ class VCSDefinition:
 
     type: str
     url: str
-    options: dict
+    options: dict = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict):

@@ -39,15 +39,24 @@ class Package:
         self.source_dir = self.import_dir
         self.dependencies = []
         self.declared_at = None
+        self.matches = []
 
     def details(self):
         bold = "\033[1m"
         reset = "\033[0m"
+
         return (
             f"{bold}VS Package:{reset} {self.name}\n"
-            f"  {bold}source definition:{reset} {self.source}\n"
-            f"  {bold}first match:{reset} {self.declared_at}\n"
-            f"  {bold}depends on:{reset} {self.dependencies}\n"
+            f"  {bold}first match:{reset}\n"
+            f"      {self.declared_at}\n"
+            f"  {bold}source definition:{reset}\n"
+            f"      type: {self.source.type}\n"
+            f"      url: {self.source.url}\n"
+            f"      options: {self.source.options}\n"
+            f"  {bold}depends on:{reset}\n"
+            f"      {self.dependencies}\n"
+            f"  {bold}others matches:{reset}\n"
+            + "".join([f"      {match}\n" for match in self.matches])
         )
 
     def is_aquired(self):
