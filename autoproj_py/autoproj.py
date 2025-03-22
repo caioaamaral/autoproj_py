@@ -1,9 +1,12 @@
 import os
 from pathlib import Path
+import shutil
+import subprocess
 
 from autoproj_py.config import Config
 from autoproj_py.environment import Environment
 from autoproj_py.manifest import Manifest
+
 
 class Autoproj:
     @staticmethod
@@ -22,4 +25,14 @@ class Autoproj:
 
     config = Config(autoproj_dir / 'config.yaml')
     env = Environment(root_dir / 'env.sh')
-    manifest = Manifest.init(root_dir)
+    manifest: Manifest = None
+
+    @classmethod
+    def run(cls, cmd: list[str], cwd: str=root_dir, env: dict = os.environ, capture_output: bool = True, shell='sh'):
+        envsh = cls.root_dir / 'env.sh'
+        cmd = [shutil.which(shell), '-c' , f'. "{envsh}" && ' + ' '.join(cmd)]
+        print(f"[autoproj] running: {' '.join(cmd)}")
+        return subprocess.run(cmd, cwd=cwd, env=env, capture_output=capture_output, text=True)
+
+Autoproj.manifest = Manifest.init(Autoproj.root_dir, autoproj=Autoproj)
+Autoproj.env.save()

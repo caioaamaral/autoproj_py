@@ -1,5 +1,5 @@
-import importlib
 import sys
+import runpy
 
 
 from autoproj_py.autobuild.package import Package
@@ -10,9 +10,10 @@ import autoproj_py.autobuild.dsl as dsl
 
 
 class Registry():
+    chain = dict()
 
     @classmethod
-    def init(cls, package_sets: list[PackageSet], root_dir = None):
+    def init(cls, package_sets: list[PackageSet], root_dir = None, context: dict = {}):
         Package.setup(root_dir)
         cls.package_sets = package_sets
 
@@ -37,7 +38,7 @@ class Registry():
             init, sys_path = init_files
             sys.path.insert(0, sys_path)
             if init.exists():
-                importlib.import_module(f'{path.name}.init')
+                runpy.run_module(f'{path.name}.init', run_name='__main__', init_globals=context)
 
             sys.path.pop()
 

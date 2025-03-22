@@ -11,13 +11,14 @@ class Manifest:
     package_sets = []
 
     @classmethod
-    def init(cls, root_dir):
+    def init(cls, root_dir, autoproj):
         cls.base_dir = root_dir / 'autoproj'
         PackageSet.base_dir = cls.base_dir
+        autoproj.manifest = cls
 
         cls.package_sets = cls._load_package_sets_config()
 
-        cls.registry = Registry.init(package_sets=cls.package_sets, root_dir=root_dir)
+        cls.registry = Registry.init(package_sets=cls.package_sets, root_dir=root_dir, context={'Autoproj': autoproj})
 
         return cls
 
