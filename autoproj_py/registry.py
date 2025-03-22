@@ -51,10 +51,38 @@ class Registry():
             sys.path.insert(0, sys_path)
             for autobuild in autobuilds:
                 with open(autobuild, 'r') as file:
-                    exec(file.read(), exec_context, exec_context)
+                    try:
+                        exec(file.read(), exec_context, exec_context)
+                    except Exception as e:
+                        print(f'Got exception while processing {autobuild}: {e}')
+                        exit(-1)
                 package_set.vcs_packages.send(package_set.import_path / autobuild.name)
 
             sys.path.pop()
+
+        # find all selected packages
+        selected_packages = set()
+        for package_set in cls.package_sets:
+            for package_name in package_set.vcs_packages._selected_packages:
+                selected_packages.add(package_name)
+
+        # hydrate dependencies and fill cls.chain
+        for package_name in selected_packages:
+            package = cls._find_first(package_name)
+            package.hydrate_dependencies()
+            for dependency_name in package.dependencies:
+                if dependency_name not in cls.chain:
+                    cls.chain[dependency_name] = [package_name]
+                else:
+                    cls.chain[dependency_name].append(package_name)
+
+        # setup reverse dependencies
+        for package_name, dependencies in cls.chain.items():
+            package = cls._find_first(package_name)
+            if not package:
+                continue
+
+            package.reverse_dependencies = dependencies
 
         return cls
 
@@ -84,11 +112,12 @@ class Registry():
                 pkg = package_set.vcs_packages.get(package_name)
                 yield pkg
 
+        return None
+
     @classmethod
     def show(cls, package_name: str):
         matches = cls._find_all(package_name)
         if not matches:
-            print(f'No package found for {package_name}')
             return
 
         package = matches.pop(0)

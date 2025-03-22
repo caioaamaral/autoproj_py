@@ -8,8 +8,10 @@ class CMake(Package):
         super().__init__(name, source)
         self.build_dir = self.root_dir / "build" / self.name
         self.install_dir = self.root_dir / "install" / self.name
+        self.use_manifest = True
+        self.use_package_xml = False
     
-    def build(self):
+    def build(self, registry, env=None, cwd=None, envsh=None):
         os.makedirs(self.build_dir, exist_ok=True)
         self.configure()
         self.make()

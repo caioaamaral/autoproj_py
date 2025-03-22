@@ -2,7 +2,7 @@ import sys
 
 from autoproj_py.autobuild.registry import AutobuildCollector
 from autoproj_py.autobuild.package import Package
-from autoproj_py.autobuild.packages.cmake import CMake
+from autoproj_py.autobuild.packages import CMake
 
 
 def extension(func):
@@ -16,5 +16,5 @@ def import_package(name: str, source: str):
 
 def cmake_package(name: str, source: str):
     pkg = CMake(name, source)
-    pkg.dependencies = ["cmake"]
+    pkg.dependencies = ['cmake']
     AutobuildCollector.collect(pkg.name, pkg)

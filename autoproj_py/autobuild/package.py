@@ -38,6 +38,7 @@ class Package:
         self.import_dir = self.root_dir / self.name
         self.source_dir = self.import_dir
         self.dependencies = []
+        self.reverse_dependencies = []
         self.declared_at = None
         self.matches = []
 
@@ -55,23 +56,39 @@ class Package:
             f"      options: {self.source.options}\n"
             f"  {bold}depends on:{reset}\n"
             f"      {self.dependencies}\n"
+            f"  {bold}reverse dependencies:{reset}\n"
+            f"      {self.reverse_dependencies}\n"
             f"  {bold}others matches:{reset}\n"
             + "".join([f"      - {match}\n" for match in self.matches])
         )
 
+    @property
     def is_aquired(self):
         return self.import_dir.exists()
 
     def acquire(self):
         self.info(f"importing {self.name}", "import")
-        if self.is_aquired():
+        if self.is_aquired:
             self.info(f"{self.name} already imported", "import")
             return
 
-        importer.import_package(self.source, self.import_dir)
+        importer.import_package(self.source.url, self.import_dir)
 
-    def build(self):
+    def build(self, registry, env=None, cwd=None, envsh=None):
+        os.makedirs(self.build_dir, exist_ok=True)
+        os.makedirs(self.install_dir, exist_ok=True)
+        for dependency_name in self.dependencies:
+            dependency = registry.get(dependency_name)
+            if not dependency:
+                self.error(f'missing dependency {dependency_name}', 'build')
+                return
+
+            dependency.acquire()
+            dependency.build(registry, env=env, cwd=cwd, envsh=envsh)
         self.warn(f'no build rules set for {self.name}', "build")
+
+    def hydrate_dependencies(self):
+        pass
 
     def run(self, cmd: list[str], cwd: str, env: dict = os.environ):
         Subprocess.run(cmd, cwd=cwd, env=env)
