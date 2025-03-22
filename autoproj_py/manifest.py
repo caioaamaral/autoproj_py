@@ -46,12 +46,24 @@ class Manifest:
         return package_sets
 
     @classmethod
-    def show(cls, package_name: str):
-        cls.registry.show(package_name)
+    def show_package(cls, name: str):
+        cls.registry.show(name)
 
     @classmethod
-    def get(cls, package_name: str):
-        return cls.registry.get(package_name)
+    def get_package(cls, name: str):
+        return cls.registry.get(name)
+
+    @classmethod
+    def get_package_set(cls, name: str):
+        for pkg_set in cls.package_sets:
+            if pkg_set.name == name:
+                return pkg_set
+
+        raise ValueError(f"'{name}' not in package_sets. Valids are: {cls.each_package_set(lambda p: p.name)}")
+
+    @classmethod
+    def each_package_set(cls, fn):
+        return list(map(fn, cls.package_sets))
 
     @classmethod
     def keys(cls):

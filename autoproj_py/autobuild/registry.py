@@ -23,28 +23,31 @@ class AutobuildRegistry:
 
     def __init__(self, name: str):
         self.name = name
-        self._autobuild_registry = dict[str, Package]()
+        self._registry = dict[str, Package]()
+        self._selected_packages = []
 
     def send(self, autobuild_file):
         for package_name, package in AutobuildCollector.flush():
             package.declared_at = f'{self.name}: {autobuild_file}'
-            self._autobuild_registry[package_name] = package
+            self._registry[package_name] = package
+            if package.is_aquired:
+                self._selected_packages.append(package_name)
 
     def has(self, package_name: str):
-        return package_name in self._autobuild_registry
+        return package_name in self._registry
 
     def get(self, package_name: str):
-        return self._autobuild_registry[package_name]
+        return self._registry[package_name]
 
     def keys(self):
-        return self._autobuild_registry.keys()
+        return self._registry.keys()
 
     def list(self):
-        return list(self._autobuild_registry.items())
+        return list(self._registry.items())
 
     def __repr__(self):
         items = [
             ': '.join([name, str(pkg.declared_at)])
-            for name, pkg in self._autobuild_registry.items()
+            for name, pkg in self._registry.items()
         ]
-        return f"{self.name}: {[': '.join([name, str(pkg.declared_at)]) for name, pkg in self._autobuild_registry.items()]}"
+        return f"{self.name}: {[': '.join([name, str(pkg.declared_at)]) for name, pkg in self._registry.items()]}"

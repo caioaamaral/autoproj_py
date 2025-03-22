@@ -8,11 +8,10 @@ def configure(subparser):
 
 
 def run(args):
-    pkg = Autoproj.registry.get(args.PACKAGE_NAME)
+    pkg = Autoproj.manifest.get_package(args.PACKAGE_NAME)
     pkg.acquire()
-    pkg.build()
+    pkg.build(cwd=Autoproj.root_dir, envsh=Autoproj.root_dir / 'env.sh')
 
 
 def is_imported(package_name: str):
     return (Autoproj.root_dir / package_name).exists()
-
