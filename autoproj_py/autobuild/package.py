@@ -1,10 +1,14 @@
 import logging
 import os
+from typing import TYPE_CHECKING
 
-import autoproj_py.autobuild.logger as logger
-import autoproj_py.ops.acquire as importer
 from autoproj_py.autobuild.subprocess import Subprocess
 from autoproj_py.vcs_definition import VCSDefinition
+import autoproj_py.autobuild.logger as logger
+import autoproj_py.ops.acquire as importer
+
+if TYPE_CHECKING:
+    from autoproj_py.osdep import OSDep
 
 
 def __setup(name: str, level: "logging._Level"):
@@ -19,9 +23,14 @@ def __setup_import(level: "logging._Level"):
     return __setup("import.log", level)
 
 
+def __setup_update(level: "logging._Level"):
+    return __setup('update.log', level)
+
+
 _SETUPS = {
-    "build": __setup_build,
-    "import": __setup_import
+    'build': __setup_build,
+    'import': __setup_import,
+    'update': __setup_update,
 }
 
 
@@ -66,11 +75,25 @@ class Package:
     def is_aquired(self):
         return self.import_dir.exists()
 
-    def acquire(self):
-        self.info(f"importing {self.name}", "import")
+    def update(self, registry):
+        for dependency_name in self.dependencies:
+            dependency = registry.get(dependency_name)
+            if not dependency:
+                self.error(f'missing dependency {dependency_name}', 'update')
+                exit(-1)
+
+            if isinstance(dependency, Package):
+                dependency.acquire()
+            elif isinstance(dependency, OSDep):
+                dependency.install()
+
+    def acquire(self, registry):
+        self.info(f'importing {self.name}', 'import')
         if self.is_aquired:
-            self.info(f"{self.name} already imported", "import")
+            self.info(f'{self.name} already imported', 'import')
             return
+
+        self.update(registry)
 
         importer.import_package(self.source.url, self.import_dir)
 
@@ -81,11 +104,10 @@ class Package:
             dependency = registry.get(dependency_name)
             if not dependency:
                 self.error(f'missing dependency {dependency_name}', 'build')
-                return
+                exit(-1)
 
-            dependency.acquire()
-            dependency.build(registry, env=env, cwd=cwd, envsh=envsh)
-        self.warn(f'no build rules set for {self.name}', "build")
+            if isinstance(dependency, Package):
+                dependency.build(registry, env=env, cwd=cwd, envsh=envsh)
 
     def hydrate_dependencies(self):
         pass
