@@ -1,4 +1,7 @@
 from pathlib import Path
+import re
+import shutil
+import subprocess
 
 import lsb_release
 import yaml
@@ -7,7 +10,59 @@ import yaml
 DISTRO = lsb_release.get_distro_information()['CODENAME']
 
 
-class APT_OSDepManifest:
+class APT_OSDep:
+
+    KEYRINGS_DIR = Path('/usr/share/keyrings')
+    SOURCES_LIST_DIR = Path('/etc/apt/sources.list.d')
+
+    @classmethod
+    def add_repo(cls, name: str, rule: str, key=None):
+        if key:
+            p = subprocess.run(
+                [shutil.which('sh'), '-c', f"sudo tee {(cls.KEYRINGS_DIR / f'{name}-archive-keyring.gpg').as_posix()}"],
+                input=key,
+                capture_output=True,
+            )
+
+            if p.returncode != 0:
+                raise Exception('Failed to add key')
+
+        p = subprocess.run(
+            [shutil.which('sh'), '-c', f"echo '{rule}' | sudo tee {(cls.SOURCES_LIST_DIR / f'{name}.list').as_posix()}"],
+            capture_output=True,
+        )
+
+        if p.returncode != 0:
+                raise Exception('Failed to add repo')
+
+
+    @staticmethod
+    def install(name: str):
+        subprocess.run(['sudo', shutil.which('apt'), 'install', '-y', name])
+
+    @staticmethod
+    def is_installed(name: str):
+        output = subprocess.run([shutil.which('dpkg'), '-s', name], capture_output=True, text=True)
+        return False if output.stderr else True
+
+class PIP_OSDep:
+
+    @staticmethod
+    def install(name: str):
+        subprocess.run([shutil.which('pip'), 'install', name])
+
+    @staticmethod
+    def is_installed(name: str):
+        output = subprocess.run([shutil.which('pip'), 'show', name], capture_output=True, text=True)
+        return False if output.stderr else True
+
+
+OSDepHandlers = {
+    re.compile(r'.'): (0, APT_OSDep),
+    re.compile(r'^pip$'): (10, PIP_OSDep),
+}
+
+class OSDepManifest:
 
     @classmethod
     def from_dict(cls, definition: dict[str, dict]):
@@ -22,11 +77,19 @@ class APT_OSDepManifest:
         self.rules = rules
         self.osdeps = osdeps
 
+    def to_dict(self):
+        if self.osdeps:
+            self.rules.append(self.osdeps)
 
-class APT_OSDep:
+        return {
+            self.name: self.rules
+        }
+
+
+class OSDep:
 
     @classmethod
-    def from_manifest(cls, manifest: APT_OSDepManifest, declared_at=None):
+    def from_manifest(cls, manifest: OSDepManifest, declared_at=None):
         if DISTRO in manifest.rules:
             rule = f'{DISTRO}: {manifest.rules[DISTRO]}'
             return cls(manifest.name, rule, manifest.osdeps, declared_at=declared_at)
@@ -37,7 +100,7 @@ class APT_OSDep:
 
     @classmethod
     def from_dict(cls, definition: dict, declared_at=None):
-        manifest = APT_OSDepManifest.from_dict(definition)
+        manifest = OSDepManifest.from_dict(definition)
         return cls.from_manifest(manifest, declared_at=declared_at)
 
 
@@ -77,8 +140,11 @@ class APT_OSDep:
             f"      {self.osdep}\n" if self.osdep else ''
         )
 
+    def acquire(self):
+        self.install()
+
     def install(self):
-        name = self.osdep.get(DISTRO, None)
+        name = self.apt_dpkg
         
         if name is None:
             return
@@ -86,25 +152,35 @@ class APT_OSDep:
         self._install(name)
     
     def _install(self, name: str):
-        pass
-        # subprocess.run(["sudo", "apt", "install", "-y", name])
+        distro, name = self.rule.split(':')
+        name = name.strip()
+        best_score = -1
+        selected_handler = None
+        for hook in OSDepHandlers.keys():
+            score, handler = OSDepHandlers[hook]
+            if hook.match(distro) and score > best_score:
+                best_score = score
+                selected_handler = handler
+
+        if not selected_handler.is_installed(name):
+            selected_handler.install(name)
 
 
 class OSDepRegistry:
 
     def __init__(self, name: str):
         self.name = name
-        self._packages = dict[str, APT_OSDep]()
+        self._packages = dict[str, OSDep]()
 
-    def send(self, osdep: Path|APT_OSDep):
+    def send(self, osdep: Path|OSDep):
         if isinstance(osdep, Path):
             with open(osdep, 'r') as file:
                 data: dict = yaml.safe_load(file)
                 for name, definition in data.items():
-                    pkg = APT_OSDep.from_dict({name: definition}, declared_at=f'{self.name}: {osdep}')
+                    pkg = OSDep.from_dict({name: definition}, declared_at=f'{self.name}: {osdep}')
                     self._packages[name] = pkg
 
-        elif isinstance(osdep, APT_OSDep):
+        elif isinstance(osdep, OSDep):
             osdep.declared_at=f"{self.name}: 'dynamically declared'"
             self._packages[osdep.name] = osdep
 
