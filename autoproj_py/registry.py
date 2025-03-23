@@ -48,8 +48,7 @@ class Registry():
             if init.exists():
                 runpy.run_module(f'{path.name}.init', run_name='__main__', init_globals=context)
 
-            sys.path.pop()
-
+            sys.path.pop(0)
             for osdep in osdep_files:
                 package_set.osdeps.send(osdep)
 
@@ -67,7 +66,7 @@ class Registry():
                         exit(-1)
                 package_set.vcs_packages.send(package_set.import_path / autobuild.name)
 
-            sys.path.pop()
+            sys.path.pop(0)
 
         # find all selected packages
         selected_packages = set()
