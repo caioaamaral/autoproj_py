@@ -1,48 +1,27 @@
-import logging
 import os
 from typing import TYPE_CHECKING
 
 from autoproj_py.autobuild.subprocess import Subprocess
 from autoproj_py.vcs_definition import VCSDefinition
-import autoproj_py.autobuild.logger as logger
+from autoproj_py.logger import setup_logger
 import autoproj_py.ops.acquire as importer
 
 if TYPE_CHECKING:
     from autoproj_py.osdep import OSDep
 
 
-def __setup(name: str, level: "logging._Level"):
-    return logger.setup(name, level)
-
-
-def __setup_build(level: "logging._Level"):
-    return __setup("build.log", level)
-
-
-def __setup_import(level: "logging._Level"):
-    return __setup("import.log", level)
-
-
-def __setup_update(level: "logging._Level"):
-    return __setup('update.log', level)
-
-
-_SETUPS = {
-    'build': __setup_build,
-    'import': __setup_import,
-    'update': __setup_update,
-}
-
-
 class Package:
     root_dir = None
+    log_dir = None
 
     @staticmethod
     def setup(root_dir: str):
         Package.root_dir = root_dir
+        Package.log_dir = root_dir / 'log'
 
     def __init__(self, name: str, url: str):
         self.name = name
+        self.logger = setup_logger(name, filename=Package.log_dir / f'{name}.log', level='DEBUG')
         self.source = VCSDefinition.from_url(url)
         self.import_dir = self.root_dir / self.name
         self.source_dir = self.import_dir
@@ -115,14 +94,11 @@ class Package:
     def run(self, cmd: list[str], cwd: str, env: dict = os.environ):
         Subprocess.run(cmd, cwd=cwd, env=env)
 
-    def log(self, message: str, level: "logging._Level", step:str):
-        logger.log(message, level, _SETUPS[step])
+    def info(self, message: str):
+        self.logger.info(message)
 
-    def info(self, message: str, step:str):
-        self.log(message, logging.INFO, step)
+    def warn(self, message: str):
+        self.logger.warning(message)
 
-    def warn(self, message: str, step:str):
-        self.log(message, logging.WARNING, step)
-
-    def error(self, message: str, step:str):
-        self.log(message, logging.ERROR, step)
+    def error(self, message: str):
+        self.logger.error(message)

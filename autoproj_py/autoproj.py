@@ -5,6 +5,7 @@ import subprocess
 
 from autoproj_py.config import Config
 from autoproj_py.environment import Environment
+from autoproj_py.logger import setup_logger
 from autoproj_py.manifest import Manifest
 
 
@@ -22,10 +23,28 @@ class Autoproj:
     import_dir = root_dir / 'src'
     src_dir = root_dir / 'src'
     install_dir = root_dir / 'install'
+    log_dir = root_dir / 'log'
 
     config = Config(autoproj_dir / 'config.yaml')
     env = Environment(root_dir / 'env.sh')
-    manifest: Manifest = None
+    manifest = Manifest
+    logger = setup_logger('autoproj', filename=log_dir / 'autoproj-last.log', level='DEBUG')
+
+    @classmethod
+    def debug(cls, message):
+        cls.logger.debug(message)
+
+    @classmethod
+    def info(cls, message):
+        cls.logger.info(message)
+
+    @classmethod
+    def warn(cls, message):
+        cls.logger.warning(message)
+
+    @classmethod
+    def error(cls, message):
+        cls.logger.error(message)
 
     @classmethod
     def execute_once(cls, name, fn):
@@ -43,8 +62,10 @@ class Autoproj:
     def run(cls, cmd: list[str], cwd: str=root_dir, env: dict = os.environ, capture_output: bool = True, shell='sh'):
         envsh = cls.root_dir / 'env.sh'
         cmd = [shutil.which(shell), '-c' , f'. "{envsh}" && ' + ' '.join(cmd)]
-        print(f"[autoproj] running: {' '.join(cmd)}")
+        cls.info(f"running: {' '.join(cmd)}")
         return subprocess.run(cmd, cwd=cwd, env=env, capture_output=capture_output, text=True)
 
 Autoproj.manifest = Manifest.init(Autoproj.root_dir, autoproj=Autoproj)
 Autoproj.env.save()
+
+Autoproj.info('Running autoproj')
