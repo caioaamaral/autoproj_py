@@ -29,7 +29,7 @@ class Autoproj:
 
     @classmethod
     def execute_once(cls, name, fn):
-        name = Autoproj.manifest.current_package_set.name + '.' + name
+        name = Autoproj.manifest.current_package_set().name + '.' + name
         cached_tasks: list = cls.config.get(f'__cache__.tasks')
         if name in cached_tasks:
             return

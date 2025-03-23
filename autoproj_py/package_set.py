@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import os
 
 from pathlib import Path
@@ -93,3 +94,10 @@ class MainPackageSet(PackageSet):
     @property
     def import_path(self):
         return self.base_dir
+
+
+@dataclass
+class PackageSetCollection:
+
+    current: PackageSet | None = None
+    collection: list[PackageSet] = field(default_factory=list)

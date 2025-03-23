@@ -1,11 +1,10 @@
 import sys
 import runpy
 
-
 from autoproj_py.autobuild.package import Package
 from autoproj_py.autobuild.registry import AutobuildRegistry
-from autoproj_py.osdep import OSDepRegistry, APT_OSDep
-from autoproj_py.package_set import PackageSet
+from autoproj_py.osdep import OSDepRegistry, OSDep
+from autoproj_py.package_set import PackageSetCollection
 import autoproj_py.autobuild.dsl as dsl
 
 
@@ -13,20 +12,29 @@ class Registry():
     chain = dict()
 
     @classmethod
-    def init(cls, package_sets: list[PackageSet], root_dir = None, context: dict = {}):
+    def init(cls, pkg_sets: PackageSetCollection, root_dir = None, context: dict = {}):
         Package.setup(root_dir)
+
+        package_sets = pkg_sets.collection
         cls.package_sets = package_sets
 
         init_files = []
         osdep_files = []
         autobuild_files = []
         for package_set in cls.package_sets:
+            pkg_sets.current = package_set
             if package_set.is_main:
                 path = package_set.import_path
             else:
                 path = package_set.hidden_path
             init_files = (path / 'init.py', path.parent.as_posix())
-            osdep_files = path.rglob('*.osdep')
+            osdep_files = [
+                p
+                for p in path.rglob("*.osdep")
+
+                # skip the file only if this is the "main" package_set AND path has "package_sets"
+                if not (package_set.is_main and "package_sets" in p.parts)
+            ]
             autobuild_files = ([
                 p
                 for p in path.rglob("*.autobuild")
@@ -92,11 +100,11 @@ class Registry():
         return cls._find_first(package_name)
 
     @classmethod
-    def _find_first(cls, package_name: str) -> APT_OSDep|Package:
+    def _find_first(cls, package_name: str) -> OSDep|Package:
         return next(cls._find(package_name), None)
 
     @classmethod
-    def _find_all(cls, package_name: str) -> list[APT_OSDep|Package]:
+    def _find_all(cls, package_name: str) -> list[OSDep|Package]:
         return list(cls._find(package_name))
 
     @classmethod
