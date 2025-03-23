@@ -28,6 +28,18 @@ class Autoproj:
     manifest: Manifest = None
 
     @classmethod
+    def execute_once(cls, name, fn):
+        name = Autoproj.manifest.current_package_set.name + '.' + name
+        cached_tasks: list = cls.config.get(f'__cache__.tasks')
+        if name in cached_tasks:
+            return
+
+        fn()
+        cached_tasks.append(name)
+        cls.config.set('__cache__.tasks', cached_tasks)
+        cls.config.save()
+
+    @classmethod
     def run(cls, cmd: list[str], cwd: str=root_dir, env: dict = os.environ, capture_output: bool = True, shell='sh'):
         envsh = cls.root_dir / 'env.sh'
         cmd = [shutil.which(shell), '-c' , f'. "{envsh}" && ' + ' '.join(cmd)]
