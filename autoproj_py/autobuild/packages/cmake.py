@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from autoproj_py.autobuild.package import Package
+from autoproj_py.autobuild.packages.package import Package
 
 class CMake(Package):
     def __init__(self, name: str, source: str):

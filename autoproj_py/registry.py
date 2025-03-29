@@ -1,7 +1,7 @@
 import sys
 import runpy
 
-from autoproj_py.autobuild.package import Package
+from autoproj_py.autobuild.packages.package import Package
 from autoproj_py.autobuild.registry import AutobuildRegistry
 from autoproj_py.osdep import OSDepRegistry, OSDep
 from autoproj_py.package_set import PackageSetCollection

@@ -1,7 +1,7 @@
 import os
 from typing import TYPE_CHECKING
 
-from autoproj_py.autobuild.subprocess import Subprocess
+from autoproj_py.autobuild.packages.mixins import LoggedTaskMixin, ConfigureMixin
 from autoproj_py.vcs_definition import VCSDefinition
 from autoproj_py.logger import setup_logger
 import autoproj_py.ops.acquire as importer
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from autoproj_py.osdep import OSDep
 
 
-class Package:
+class Package(LoggedTaskMixin, ConfigureMixin):
     root_dir = None
     log_dir = None
 
@@ -20,8 +20,8 @@ class Package:
         Package.log_dir = root_dir / 'log'
 
     def __init__(self, name: str, url: str):
-        self.name = name
-        self.logger = setup_logger(name, filename=Package.log_dir / f'{name}.log', level='DEBUG')
+        super().__init__(name, Package.log_dir / name)
+        self.logger = setup_logger(name, level='INFO')
         self.source = VCSDefinition.from_url(url)
         self.import_dir = self.root_dir / self.name
         self.source_dir = self.import_dir
@@ -77,8 +77,7 @@ class Package:
         importer.import_package(self.source.url, self.import_dir)
 
     def build(self, registry, env=None, cwd=None, envsh=None):
-        os.makedirs(self.build_dir, exist_ok=True)
-        os.makedirs(self.install_dir, exist_ok=True)
+        self.configure_direcotories()
         for dependency_name in self.dependencies:
             dependency = registry.get(dependency_name)
             if not dependency:
@@ -90,9 +89,6 @@ class Package:
 
     def hydrate_dependencies(self):
         pass
-
-    def run(self, cmd: list[str], cwd: str, env: dict = os.environ):
-        Subprocess.run(cmd, cwd=cwd, env=env)
 
     def info(self, message: str):
         self.logger.info(message)

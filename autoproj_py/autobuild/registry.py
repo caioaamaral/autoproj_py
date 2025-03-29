@@ -1,8 +1,4 @@
-import importlib
-from pathlib import Path
-import sys
-
-from autoproj_py.autobuild.package import Package
+from autoproj_py.autobuild.packages.package import Package
 
 
 class AutobuildCollector:

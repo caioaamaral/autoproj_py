@@ -1,8 +1,8 @@
 import sys
 
 from autoproj_py.autobuild.registry import AutobuildCollector
-from autoproj_py.autobuild.package import Package
-from autoproj_py.autobuild.packages import CMake
+from autoproj_py.autobuild.packages.package import Package
+from autoproj_py.autobuild.packages.cmake import CMake
 
 
 def extension(func):
