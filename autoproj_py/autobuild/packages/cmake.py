@@ -25,7 +25,7 @@ class CMake(Package):
 
     def make(self):
         cmd = [shutil.which('make'), '-j']
-        self.run(cmd, cwd=self.build_dir, env=os.environ)
+        self.run('build', cmd, cwd=self.build_dir, env=os.environ)
 
     def install(self):
         cmd = [shutil.which('make'), 'install']

@@ -76,8 +76,8 @@ class Package(LoggedTaskMixin, ConfigureMixin):
 
         importer.import_package(self.source.url, self.import_dir)
 
-    def build(self, registry, env=None, cwd=None, envsh=None):
-        self.configure_direcotories()
+    def build(self, registry, env, cwd):
+        self.configure_directories()
         for dependency_name in self.dependencies:
             dependency = registry.get(dependency_name)
             if not dependency:
@@ -85,7 +85,7 @@ class Package(LoggedTaskMixin, ConfigureMixin):
                 exit(-1)
 
             if isinstance(dependency, Package):
-                dependency.build(registry, env=env, cwd=cwd, envsh=envsh)
+                dependency.build(registry, env=env, cwd=cwd)
 
     def hydrate_dependencies(self):
         pass
@@ -98,3 +98,6 @@ class Package(LoggedTaskMixin, ConfigureMixin):
 
     def error(self, message: str):
         self.logger.error(message)
+
+    def run(self, task_name: str, cmd: list[str] | str, cwd: str, env: dict):
+        super().run(task_name, cmd, cwd, env)
