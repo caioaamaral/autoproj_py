@@ -14,6 +14,7 @@ def import_package(name: str, source: str):
     pkg = Package(name, source)
     AutobuildCollector.collect(pkg.name, pkg)
 
+
 def cmake_package(name: str, source: str):
     pkg = CMake(name, source)
     pkg.dependencies = ['cmake']

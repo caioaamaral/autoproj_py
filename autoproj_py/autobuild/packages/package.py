@@ -30,6 +30,16 @@ class Package(LoggedTaskMixin, ConfigureMixin):
         self.declared_at = None
         self.matches = []
 
+    def __enter__(self):
+        self.logger.debug(f'entering {self.name}')
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.logger.debug(f'exiting {self.name}')
+        if exc_type:
+            self.error(f'Error in {self.name}: {exc_val}', 'exit')
+        return False
+
     def details(self):
         bold = "\033[1m"
         reset = "\033[0m"
