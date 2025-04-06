@@ -3,10 +3,12 @@ from pathlib import Path
 import shutil
 import subprocess
 
+from autoproj_py.autobuild.packages.package import Package
 from autoproj_py.config import Config
 from autoproj_py.environment import Environment
 from autoproj_py.logger import setup_logger
 from autoproj_py.manifest import Manifest
+from autoproj_py.osdep import OSDep
 
 
 class Autoproj:
@@ -47,6 +49,28 @@ class Autoproj:
         cls.logger.error(message)
 
     @classmethod
+    def build(cls, package_name: str):
+        cls.info(f'building {package_name}')
+        package = cls.manifest.get_package(package_name)
+        if not package:
+            cls.error(f'missing dependency {package}')
+            exit(-1)
+
+        if isinstance(package, Package):
+
+            for pkg in package.dependencies:
+                cls.build(pkg)
+
+            if not package.is_aquired:
+                package.acquire()
+
+            env=cls.env.export_context()
+            package.build(env=env, cwd=cls.root_dir)
+
+        if isinstance(package, OSDep):
+            package.install()
+
+    @classmethod
     def execute_once(cls, name, fn):
         name = Autoproj.manifest.current_package_set().name + '.' + name
         cached_tasks: list = cls.config.get(f'__cache__.tasks')
@@ -62,10 +86,12 @@ class Autoproj:
     def run(cls, cmd: list[str], cwd: str=root_dir, env: dict = os.environ, capture_output: bool = True, shell='sh'):
         envsh = cls.root_dir / 'env.sh'
         cmd = [shutil.which(shell), '-c' , f'. "{envsh}" && ' + ' '.join(cmd)]
-        cls.info(f"running: {' '.join(cmd)}")
-        return subprocess.run(cmd, cwd=cwd, env=env, capture_output=capture_output, text=True)
 
+        p: subprocess.CompletedProcess = subprocess.run(cmd, cwd=cwd, env=env, capture_output=capture_output, text=True)
+
+        return p
+
+Autoproj.info('Running autoproj')
 Autoproj.manifest = Manifest.init(Autoproj.root_dir, autoproj=Autoproj)
 Autoproj.env.save()
 
-Autoproj.info('Running autoproj')
