@@ -86,16 +86,8 @@ class Package(LoggedTaskMixin, ConfigureMixin):
 
         importer.import_package(self.source.url, self.import_dir)
 
-    def build(self, registry, env, cwd):
+    def build(self, env, cwd):
         self.configure_directories()
-        for dependency_name in self.dependencies:
-            dependency = registry.get(dependency_name)
-            if not dependency:
-                self.error(f'missing dependency {dependency_name}', 'build')
-                exit(-1)
-
-            if isinstance(dependency, Package):
-                dependency.build(registry, env=env, cwd=cwd)
 
     def hydrate_dependencies(self):
         pass
