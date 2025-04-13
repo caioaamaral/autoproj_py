@@ -1,12 +1,14 @@
 from dataclasses import dataclass, field
 import os
-
 from pathlib import Path
+import subprocess
 
 from autoproj_py.autobuild.registry import AutobuildRegistry
 from autoproj_py.ops.acquire import git_import
+from autoproj_py.python_env import PythonEnv
 from autoproj_py.osdep import OSDepRegistry
 from autoproj_py.vcs_definition import VCSDefinition
+from autoproj_py.subprocess import Subprocess
 
 
 class PackageSet:
@@ -23,6 +25,7 @@ class PackageSet:
         self.osdeps = None
         self.vcs_packages = AutobuildRegistry(self.name)
         self.osdeps = OSDepRegistry(self.name)
+        self._env = None
 
         self._import_name = self.name
 
@@ -57,9 +60,41 @@ class PackageSet:
     def is_imported(self):
         return self.import_path.exists()
 
+    @property
+    def env(self) -> PythonEnv:
+        if self._env is None:
+            if self.is_main:
+                env_path = self.base_dir / '.venv'
+            else:
+                env_path = self.import_path / '.venv'
+            self._env = PythonEnv(env_path)
+        return self._env
+
     def aquire(self):
         if self.is_remote and not self.is_imported:
             git_import(self.vcs.url, self.import_path)
+
+    def install(self):
+        """Install the package set and set up its virtualenv."""
+        # Skip if virtualenv already exists
+        if self.env.path.exists():
+            return
+
+        # Create the virtualenv
+        self.env.create()
+
+        # If there's a requirements.txt in the package set, install it
+        requirements = self.import_path / 'requirements.txt'
+        if requirements.exists():
+            cmd = [
+                str(self.env.python),
+                '-m',
+                'pip',
+                'install',
+                '-r',
+                str(requirements)
+            ]
+            subprocess.run(cmd, check=True)
 
     def _hide_itself(self):
         if Path(self.hidden_path).exists():

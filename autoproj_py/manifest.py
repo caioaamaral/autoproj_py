@@ -14,9 +14,14 @@ class Manifest:
     def init(cls, root_dir, autoproj):
         cls.base_dir = root_dir / 'autoproj'
         PackageSet.base_dir = cls.base_dir
-        autoproj.manifest = cls
 
         cls.package_sets_collection.collection = cls._load_package_sets_config()
+
+        # Install all package sets before initializing the registry
+        for package_set in cls.package_sets_collection.collection:
+            if package_set.is_remote and not package_set.is_imported:
+                package_set.aquire()
+            package_set.install()
 
         cls.registry = Registry.init(pkg_sets=cls.package_sets_collection, root_dir=root_dir, context={'Autoproj': autoproj})
 
@@ -34,9 +39,6 @@ class Manifest:
 
         for vcs in manifest['package_sets']:
             pkg_set = PackageSet(VCSDefinition.from_dict(vcs))
-
-            if pkg_set.is_remote and not pkg_set.is_imported:
-                pkg_set.aquire()
 
             if not pkg_set.is_main:
                 pkg_set._hide_itself()
