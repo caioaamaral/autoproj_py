@@ -22,19 +22,48 @@ class Config:
         return conf
 
     def set(self, key: str, value):
-        keys = iter(key.split('.'))
+        """Set a value in the configuration.
 
-        node = next(keys)
-        definition = { node: None }
-        current = definition
-        while (k := next(keys, None)):
-            current[node] = {k: None}
-            current = current[node]
-            node = k
+        Args:
+            key: The configuration key to set
+            value: The value to set
+        """
+        keys = key.split('.')
+        current = self.config
 
-        current[node] = value
-        self.config.update(definition)
+        # Traverse the config dictionary to the second-to-last key
+        for key in keys[:-1]:
+            if key not in current:
+                current[key] = {}
+            current = current[key]
 
+        # Set the value at the last key
+        current[keys[-1]] = value
+
+    def ask(self, key: str, question: str, default=None):
+        """Ask the user a question and store the answer in the configuration.
+
+        Args:
+            key: The configuration key to store the answer under
+            question: The question to ask the user
+            default: Default value if user provides no input
+        """
+        current_value = self.get(key)
+        if current_value is not None:
+            return current_value
+
+        if default is not None:
+            question = f"{question} [{default}]: "
+        else:
+            question = f"{question}: "
+
+        answer = input(question).strip()
+        if not answer and default is not None:
+            answer = default
+
+        self.set(key, answer)
+        self.save()
+        return answer
 
     def save(self):
         with open(self.config_file, 'w') as f:
