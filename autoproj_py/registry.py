@@ -1,5 +1,5 @@
 import sys
-import runpy
+from pathlib import Path
 
 from autoproj_py.autobuild.packages.package import Package
 from autoproj_py.autobuild.registry import AutobuildRegistry
@@ -44,11 +44,9 @@ class Registry():
             ], path.parent.as_posix())
 
             init, sys_path = init_files
-            sys.path.insert(0, sys_path)
             if init.exists():
-                runpy.run_module(f'{path.name}.init', run_name='__main__', init_globals=context)
+                package_set.env.run_module(init, context)
 
-            sys.path.pop(0)
             for osdep in osdep_files:
                 package_set.osdeps.send(osdep)
 

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=74.0", "wheel", "build"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "autoproj_py"
@@ -14,11 +14,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["gitpython"]
+dependencies = ["gitpython", "pyyaml"]
 
 [project.scripts]
 autoproj = "autoproj_py.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["."]
-exclude = ["tests*", "docs*"]
+[tool.hatch.build.targets.wheel]
+packages = ["autoproj_py"]
